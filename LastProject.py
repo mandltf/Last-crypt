@@ -34,4 +34,3 @@ def login(username, password):
         return True
     return False 
 
-def 

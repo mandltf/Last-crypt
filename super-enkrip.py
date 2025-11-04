@@ -1,3 +1,4 @@
+import streamlit as st
 from Crypto.Cipher import Salsa20
 
 # ===== Caesar Cipher =====
@@ -27,41 +28,68 @@ def salsa20_decrypt(ciphertext, key):
 
 # ===== Super Encryption =====
 def super_encrypt(pesan, shift, key):
-    # Langkah 1: Caesar
     hasil_caesar = caesar_encrypt(pesan, shift)
-    # Langkah 2: Salsa20
     hasil_salsa = salsa20_encrypt(hasil_caesar, key)
     return hasil_salsa
 
 def super_decrypt(ciphertext, shift, key):
-    # Langkah 1: Dekripsi Salsa20
     hasil_salsa = salsa20_decrypt(ciphertext, key)
-    # Langkah 2: Dekripsi Caesar
     hasil_caesar = caesar_decrypt(hasil_salsa, shift)
     return hasil_caesar
 
-# ===== Main Program =====
-if __name__ == "__main__":
-    print("=== Super Enkripsi Caesar_Salsa20 ===")
-    print("1. Enkripsi")
-    print("2. Dekripsi")
-    pilihan = input("Pilih menu (1/2): ")
 
-    shift = int(input("Masukkan kunci Caesar (angka): "))
-    key = input("Masukkan kunci Salsa20 (16 karakter): ").encode('utf-8')
+# ======= Streamlit App ========
+st.title("🔐 Super Enkripsi Data (Caesar + Salsa20)")
 
-    if pilihan == "1":
-        pesan = input("Masukkan teks yang mau dienkripsi: ")
-        hasil_enkripsi = super_encrypt(pesan, shift, key)
-        print("\nHasil Enkripsi (hex):", hasil_enkripsi.hex())
+st.write("Form input data pribadi lalu terenkripsi menggunakan Caesar Cipher + Salsa20")
 
-    elif pilihan == "2":
-        cipher_hex = input("Masukkan ciphertext (hex): ")
-        try:
-            ciphertext = bytes.fromhex(cipher_hex)
-            hasil_dekripsi = super_decrypt(ciphertext, shift, key)
-            print("\nHasil Dekripsi:", hasil_dekripsi)
-        except Exception as e:
-            print("\n[Error] Gagal dekripsi:", e)
+with st.form("form_data"):
+    nik = st.text_input("NIK")
+    alamat = st.text_area("Alamat")
+
+    agama = st.selectbox("Agama", ["Islam", "Kristen", "Katolik", "Hindu", "Buddha", "Konghucu"])
+    goldar = st.selectbox("Golongan Darah", ["A", "B", "AB", "O"])
+
+    shift = st.number_input("Shift Caesar (angka)", min_value=1, max_value=25, value=3)
+    key = st.text_input("Kunci Salsa20 (16 karakter)").encode()
+
+    submitted = st.form_submit_button("🔒 Enkripsi & 🔓 Dekripsi")
+
+
+if submitted:
+    if len(key) != 16:
+        st.error("❌ Kunci Salsa20 harus 16 karakter!")
     else:
-        print("Pilihan tidak valid.")
+        # Encrypt
+        enc_nik = super_encrypt(nik, shift, key)
+        enc_alamat = super_encrypt(alamat, shift, key)
+
+        # Convert to hex for display
+        enc_nik_hex = enc_nik.hex()
+        enc_alamat_hex = enc_alamat.hex()
+
+        # Decrypt for verification
+        dec_nik = super_decrypt(enc_nik, shift, key)
+        dec_alamat = super_decrypt(enc_alamat, shift, key)
+
+        st.success("✅ Data berhasil dienkripsi!")
+
+        st.subheader("📦 Data Asli")
+        st.write({
+            "NIK": nik,
+            "Alamat": alamat,
+            "Agama": agama,
+            "Golongan Darah": goldar
+        })
+
+        st.subheader("🔐 Data Terenkripsi (Hex)")
+        st.write({
+            "NIK terenkripsi": enc_nik_hex,
+            "Alamat terenkripsi": enc_alamat_hex
+        })
+
+        st.subheader("🔓 Hasil Dekripsi (Verifikasi)")
+        st.write({
+            "Dekripsi NIK": dec_nik,
+            "Dekripsi Alamat": dec_alamat
+        })

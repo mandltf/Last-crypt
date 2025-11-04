@@ -1,4 +1,5 @@
 import streamlit as st
+from koneksi import connect_db
 import hashlib
 import base64
 import mysql.connector
@@ -6,22 +7,6 @@ from mysql.connector import Error
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
-# -------------------- Database Config --------------------
-DB_HOST = "localhost"
-DB_USER = "root"
-DB_PASS = ""
-DB_NAME = "kriptografi"
-
-# -------------------- Fungsi DB --------------------
-def connect_db():
-    try:
-        conn = mysql.connector.connect(
-            host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME
-        )
-        return conn
-    except Error as e:
-        st.error(f"DB connection error: {e}")
-        return None
 
 # -------------------- Hash & AES --------------------
 def hash_password(password: str) -> str:
@@ -39,10 +24,6 @@ def aes_decrypt(payload_b64: str, key_bytes: bytes) -> str:
     cipher = AES.new(key_bytes, AES.MODE_EAX, nonce=nonce)
     return cipher.decrypt(ct).decode()
 
-# -------------------- XOR (File Binary) --------------------
-def xor_bytes(data: bytes, key: str) -> bytes:
-    kb = key.encode()
-    return bytes([b ^ kb[i % len(kb)] for i, b in enumerate(data)])
 
 # -------------------- Register & Login --------------------
 def register_user_db(name: str, password: str, phone: str):
@@ -88,20 +69,6 @@ def login_user_db(name: str, password: str):
         return False, f"Gagal dekripsi nomor: {e}"
     return True, {"user_id": uid, "phone": phone}
 
-# -------------------- Simpan Enkripsi File --------------------
-def save_file_record(user_id: int, original_name: str, encrypted_b64: str, algorithm: str):
-    conn = connect_db()
-    if not conn:
-        return False
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO data_encrypted (user_id, data_type, original_name, encrypted_data, algorithm)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (user_id, "file", original_name, encrypted_b64, algorithm))
-    conn.commit()
-    conn.close()
-    return True
-
 # -------------------- Halaman Streamlit --------------------
 if "page" not in st.session_state:
     st.session_state.page = "login"
@@ -117,7 +84,7 @@ def login_page():
             st.session_state.name = name
             st.session_state.user_id = res["user_id"]
             st.session_state.phone = res["phone"]
-            st.session_state.page = "main"
+            st.session_state.page = "dashboard" 
             st.success("Login berhasil!")
             st.rerun()
         else:
@@ -146,58 +113,4 @@ def register_page():
     if st.button("Kembali ke Login"):
         st.session_state.page = "login"
         st.rerun()
-
-def main_page():
-    st.title("📁 Enkripsi & Dekripsi File PDF / TXT (XOR)")
-    st.write(f"Login sebagai: **{st.session_state.name}** | No. Telepon: `{st.session_state.phone}`")
-
-    uploaded = st.file_uploader("Pilih file (.pdf atau .txt)", type=["pdf", "txt"])
-    key = st.text_input("Masukkan kunci XOR")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if st.button("🔒 Enkripsi File"):
-            if not uploaded or not key:
-                st.warning("Pilih file dan isi kunci!")
-            else:
-                data = uploaded.read()
-                result = xor_bytes(data, key)
-                b64 = base64.b64encode(result).decode()
-                saved = save_file_record(st.session_state.user_id, uploaded.name, b64, "xor")
-                if saved:
-                    st.success("File terenkripsi dan disimpan.")
-                    st.download_button("Download Encrypted File", data=result, file_name=f"enc_{uploaded.name}")
-                else:
-                    st.error("Gagal menyimpan ke DB.")
-
-    with col2:
-        if st.button("🔓 Dekripsi File"):
-            if not uploaded or not key:
-                st.warning("Pilih file dan isi kunci!")
-            else:
-                data = uploaded.read()
-                result = xor_bytes(data, key)
-                st.success("File berhasil didekripsi.")
-                st.download_button("Download Decrypted File", data=result, file_name=f"dec_{uploaded.name}")
-
-    st.write("---")
-    if st.button("🚪 Logout"):
-        for k in ["logged_in", "name", "user_id", "phone", "page"]:
-            if k in st.session_state:
-                del st.session_state[k]
-        st.session_state.page = "login"
-        st.success("Logout berhasil.")
-        st.rerun()
-
-# -------------------- Routing --------------------
-if st.session_state.page == "login":
-    login_page()
-elif st.session_state.page == "register":
-    register_page()
-elif st.session_state.page == "main":
-    if not st.session_state.get("logged_in"):
-        st.session_state.page = "login"
-        st.rerun()
-    else:
-        main_page()
+    

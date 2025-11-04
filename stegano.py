@@ -56,7 +56,7 @@ def decode_image(image):
 # ======== Aplikasi Streamlit ========
 
 st.title("🕵️‍♀️ Aplikasi Steganografi LSB")
-st.write("Sembunyikan dan ambil pesan rahasia dari gambar!")
+st.write("Masukkan foto ktp atau foto diri anda!")
 
 menu = st.radio("Pilih mode:", ["🔐 Encode (Sembunyikan Pesan)", "🔎 Decode (Ambil Pesan)"])
 

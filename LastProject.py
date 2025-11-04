@@ -6,13 +6,13 @@ from mysql.connector import Error
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
-# ---------------- DB CONFIG ----------------
+# -------------------- Database Config --------------------
 DB_HOST = "localhost"
 DB_USER = "root"
-DB_PASS = ""  # sesuaikan
+DB_PASS = ""
 DB_NAME = "kriptografi"
 
-# ---------------- DB CONNECT ----------------
+# -------------------- Fungsi DB --------------------
 def connect_db():
     try:
         conn = mysql.connector.connect(
@@ -23,69 +23,72 @@ def connect_db():
         st.error(f"DB connection error: {e}")
         return None
 
-# ---------------- UTIL: HASH ----------------
+# -------------------- Hash & AES --------------------
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
-# ---------------- AES (untuk NIK) ----------------
-def aes_encrypt_nik(text: str, key_bytes: bytes) -> str:
+def aes_encrypt(text: str, key_bytes: bytes) -> str:
     cipher = AES.new(key_bytes, AES.MODE_EAX)
     ct, tag = cipher.encrypt_and_digest(text.encode())
     payload = cipher.nonce + ct
     return base64.b64encode(payload).decode()
 
-def aes_decrypt_nik(payload_b64: str, key_bytes: bytes) -> str:
+def aes_decrypt(payload_b64: str, key_bytes: bytes) -> str:
     data = base64.b64decode(payload_b64)
     nonce, ct = data[:16], data[16:]
     cipher = AES.new(key_bytes, AES.MODE_EAX, nonce=nonce)
     return cipher.decrypt(ct).decode()
 
-# ---------------- XOR (file) ----------------
+# -------------------- XOR (File Binary) --------------------
 def xor_bytes(data: bytes, key: str) -> bytes:
     kb = key.encode()
     return bytes([b ^ kb[i % len(kb)] for i, b in enumerate(data)])
 
-# ---------------- DB HELPER ----------------
-def register_user_db(username: str, password: str, nik: str):
+# -------------------- Register & Login --------------------
+def register_user_db(name: str, password: str, phone: str):
     conn = connect_db()
     if not conn:
         return False, "Gagal koneksi DB."
     cur = conn.cursor()
-    cur.execute("SELECT id FROM users WHERE username=%s", (username,))
+    cur.execute("SELECT id FROM users WHERE name=%s", (name,))
     if cur.fetchone():
         conn.close()
-        return False, "Username sudah ada."
+        return False, "Nama sudah terdaftar."
+
     pw_hash = hash_password(password)
     aes_key = get_random_bytes(16)
-    encrypted_nik = aes_encrypt_nik(nik, aes_key)
+    encrypted_phone = aes_encrypt(phone, aes_key)
     cur.execute(
-        "INSERT INTO users (username, password_hash, nik_encrypted, aes_key) VALUES (%s,%s,%s,%s)",
-        (username, pw_hash, encrypted_nik, aes_key.hex())
+        "INSERT INTO users (name, password_hash, phone_encrypted, aes_key) VALUES (%s,%s,%s,%s)",
+        (name, pw_hash, encrypted_phone, aes_key.hex())
     )
     conn.commit()
     conn.close()
-    return True, "Registrasi berhasil."
+    return True, "Registrasi berhasil!"
 
-def login_user_db(username: str, password: str):
+def login_user_db(name: str, password: str):
     conn = connect_db()
     if not conn:
         return False, "Gagal koneksi DB."
     cur = conn.cursor()
-    cur.execute("SELECT id, password_hash, nik_encrypted, aes_key FROM users WHERE username=%s", (username,))
+    cur.execute("SELECT id, password_hash, phone_encrypted, aes_key FROM users WHERE name=%s", (name,))
     row = cur.fetchone()
     conn.close()
     if not row:
-        return False, "Username tidak ditemukan."
-    uid, pw_hash, nik_enc, aes_key_hex = row
+        return False, "Nama tidak ditemukan."
+
+    uid, pw_hash, phone_enc, aes_key_hex = row
     if pw_hash != hash_password(password):
         return False, "Password salah."
+
     try:
         key_bytes = bytes.fromhex(aes_key_hex)
-        nik = aes_decrypt_nik(nik_enc, key_bytes)
+        phone = aes_decrypt(phone_enc, key_bytes)
     except Exception as e:
-        return False, f"Gagal dekripsi NIK: {e}"
-    return True, {"user_id": uid, "nik": nik}
+        return False, f"Gagal dekripsi nomor: {e}"
+    return True, {"user_id": uid, "phone": phone}
 
+# -------------------- Simpan Enkripsi File --------------------
 def save_file_record(user_id: int, original_name: str, encrypted_b64: str, algorithm: str):
     conn = connect_db()
     if not conn:
@@ -99,22 +102,21 @@ def save_file_record(user_id: int, original_name: str, encrypted_b64: str, algor
     conn.close()
     return True
 
-# ---------------- UI: STATE ----------------
+# -------------------- Halaman Streamlit --------------------
 if "page" not in st.session_state:
     st.session_state.page = "login"
 
-# ---------------- LOGIN PAGE ----------------
 def login_page():
     st.title("🔐 Login Sistem Kriptografi")
-    username = st.text_input("Username")
+    name = st.text_input("Nama Lengkap")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
-        ok, res = login_user_db(username, password)
+        ok, res = login_user_db(name, password)
         if ok:
             st.session_state.logged_in = True
-            st.session_state.username = username
+            st.session_state.name = name
             st.session_state.user_id = res["user_id"]
-            st.session_state.nik = res["nik"]
+            st.session_state.phone = res["phone"]
             st.session_state.page = "main"
             st.success("Login berhasil!")
             st.rerun()
@@ -122,22 +124,20 @@ def login_page():
             st.error(res)
 
     st.write("---")
-    st.caption("Belum punya akun?")
-    if st.button("Daftar"):
+    if st.button("Daftar Akun Baru"):
         st.session_state.page = "register"
         st.rerun()
 
-# ---------------- REGISTER PAGE ----------------
 def register_page():
     st.title("📝 Register Pengguna Baru")
-    username = st.text_input("Username baru")
+    name = st.text_input("Nama Lengkap")
+    phone = st.text_input("Nomor Telepon")
     password = st.text_input("Password", type="password")
-    nik = st.text_input("Masukkan NIK")
     if st.button("Daftar"):
-        if not (username and password and nik):
-            st.warning("Isi semua kolom.")
+        if not (name and phone and password):
+            st.warning("Semua kolom wajib diisi!")
         else:
-            ok, msg = register_user_db(username, password, nik)
+            ok, msg = register_user_db(name, password, phone)
             if ok:
                 st.success(msg)
             else:
@@ -147,50 +147,50 @@ def register_page():
         st.session_state.page = "login"
         st.rerun()
 
-# ---------------- MAIN DASHBOARD ----------------
 def main_page():
-    st.title("📁 Enkripsi & Dekripsi File (XOR)")
-    st.write(f"Login sebagai: **{st.session_state.username}** | NIK: `{st.session_state.nik}`")
+    st.title("📁 Enkripsi & Dekripsi File PDF / TXT (XOR)")
+    st.write(f"Login sebagai: **{st.session_state.name}** | No. Telepon: `{st.session_state.phone}`")
 
-    uploaded = st.file_uploader("Pilih file .txt", type=["txt"])
-    key = st.text_input("Masukkan kunci XOR (teks)")
+    uploaded = st.file_uploader("Pilih file (.pdf atau .txt)", type=["pdf", "txt"])
+    key = st.text_input("Masukkan kunci XOR")
 
-    if st.button("🔒 Enkripsi File"):
-        if not uploaded or not key:
-            st.warning("Pilih file dan isi kunci.")
-        else:
-            data = uploaded.read()
-            result = xor_bytes(data, key)
-            b64 = base64.b64encode(result).decode()
-            saved = save_file_record(st.session_state.user_id, uploaded.name, b64, "xor")
-            if saved:
-                st.success("File terenkripsi dan disimpan ke database.")
-                st.download_button("Download Encrypted File", data=result, file_name=f"enc_{uploaded.name}")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("🔒 Enkripsi File"):
+            if not uploaded or not key:
+                st.warning("Pilih file dan isi kunci!")
             else:
-                st.error("Gagal menyimpan data.")
+                data = uploaded.read()
+                result = xor_bytes(data, key)
+                b64 = base64.b64encode(result).decode()
+                saved = save_file_record(st.session_state.user_id, uploaded.name, b64, "xor")
+                if saved:
+                    st.success("File terenkripsi dan disimpan.")
+                    st.download_button("Download Encrypted File", data=result, file_name=f"enc_{uploaded.name}")
+                else:
+                    st.error("Gagal menyimpan ke DB.")
 
-    if st.button("🔓 Dekripsi File"):
-        if not uploaded or not key:
-            st.warning("Pilih file dan isi kunci.")
-        else:
-            data = uploaded.read()
-            try:
+    with col2:
+        if st.button("🔓 Dekripsi File"):
+            if not uploaded or not key:
+                st.warning("Pilih file dan isi kunci!")
+            else:
+                data = uploaded.read()
                 result = xor_bytes(data, key)
                 st.success("File berhasil didekripsi.")
                 st.download_button("Download Decrypted File", data=result, file_name=f"dec_{uploaded.name}")
-            except Exception as e:
-                st.error(f"Gagal dekripsi: {e}")
 
     st.write("---")
     if st.button("🚪 Logout"):
-        for k in ["logged_in", "username", "user_id", "nik", "page"]:
+        for k in ["logged_in", "name", "user_id", "phone", "page"]:
             if k in st.session_state:
                 del st.session_state[k]
         st.session_state.page = "login"
-        st.success("Berhasil logout.")
+        st.success("Logout berhasil.")
         st.rerun()
 
-# ---------------- ROUTING ----------------
+# -------------------- Routing --------------------
 if st.session_state.page == "login":
     login_page()
 elif st.session_state.page == "register":

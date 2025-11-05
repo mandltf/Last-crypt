@@ -4,7 +4,6 @@ import superteks
 import enkrip_file
 import stegano
 
-# Init session
 if "page" not in st.session_state:
     st.session_state["page"] = "login"
 

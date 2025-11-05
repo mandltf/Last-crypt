@@ -8,7 +8,7 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
 
-# -------------------- Hash & AES --------------------
+# fungsi hash dan aes
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -25,7 +25,7 @@ def aes_decrypt(payload_b64: str, key_bytes: bytes) -> str:
     return cipher.decrypt(ct).decode()
 
 
-# -------------------- Register & Login --------------------
+# register
 def register_user_db(name: str, password: str, phone: str):
     conn = connect_db()
     if not conn:
@@ -69,7 +69,7 @@ def login_user_db(name: str, password: str):
         return False, f"Gagal dekripsi nomor: {e}"
     return True, {"user_id": uid, "phone": phone}
 
-# -------------------- Halaman Streamlit --------------------
+# streamlit
 if "page" not in st.session_state:
     st.session_state.page = "login"
 

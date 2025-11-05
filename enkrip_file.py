@@ -1,15 +1,11 @@
 import streamlit as st
-import hashlib
 import base64
 import mysql.connector
 from mysql.connector import Error
-from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from koneksi import connect_db
 
-
-
-# -------------------- Simpan Enkripsi File --------------------
+# simpan ke db
 def save_file_record(user_id: int, original_name: str, encrypted_b64: str, XOR_key: str):
     conn = connect_db()
     if not conn:
@@ -23,7 +19,7 @@ def save_file_record(user_id: int, original_name: str, encrypted_b64: str, XOR_k
     conn.close()
     return True
 
-# -------------------- XOR (File Binary) --------------------
+# XOR
 def xor_bytes(data: bytes, key: str) -> bytes:
     kb = key.encode()
     return bytes([b ^ kb[i % len(kb)] for i, b in enumerate(data)])

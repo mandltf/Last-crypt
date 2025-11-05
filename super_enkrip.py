@@ -1,6 +1,6 @@
 from Crypto.Cipher import Salsa20
 
-# ===== Caesar Cipher =====
+# caesar
 def caesar_encrypt(text, shift):
     hasil = ""
     for char in text:
@@ -20,7 +20,7 @@ def caesar_encrypt(text, shift):
 def caesar_decrypt(text, shift):
     return caesar_encrypt(text, -shift)
 
-# ===== Salsa20 Encryption =====
+# Salsa20 Encryption
 def salsa20_encrypt(data, key):
     cipher = Salsa20.new(key=key)
     ciphertext = cipher.nonce + cipher.encrypt(data.encode('utf-8'))
@@ -31,7 +31,7 @@ def salsa20_decrypt(ciphertext, key):
     cipher = Salsa20.new(key=key, nonce=nonce)
     return cipher.decrypt(ciphertext[8:]).decode('utf-8')
 
-# ===== Super Encryption =====
+# caesar + salsa20
 def super_encrypt(pesan, shift, key):
     hasil_caesar = caesar_encrypt(pesan, shift)
     hasil_salsa = salsa20_encrypt(hasil_caesar, key)

@@ -5,20 +5,17 @@ from koneksi import connect_db
 from mysql.connector import Error
 import super_enkrip as se 
 
-# ======== Fungsi Steganografi LSB ========
-
+# LSB
 def encode_image(image, message):
-    """Menyembunyikan pesan dalam gambar menggunakan LSB."""
     img = image.convert("RGB")
     
-    # 1. Konversi pesan ke biner dan tambahkan penanda akhir
-    # Penanda akhir: 1111111111111110 (karakter 'þ')
+    # Konversi pesan ke biner
     binary_msg = ''.join(format(ord(i), '08b') for i in message)
     binary_msg += format(ord('þ'), '016b') 
 
     msg_index = 0
     
-    # Periksa apakah pesan terlalu panjang
+    # cek panjang pesan
     max_bits = img.size[0] * img.size[1] * 3
     if len(binary_msg) > max_bits:
         raise ValueError("Pesan terlalu panjang untuk disembunyikan dalam gambar ini.")
@@ -31,16 +28,16 @@ def encode_image(image, message):
             if msg_index < len(binary_msg):
                 r, g, b = pixels[x, y]
                 
-                # Sembunyikan bit di saluran Merah (R)
+                # Sembunyikan bit di Merah
                 r = (r & ~1) | int(binary_msg[msg_index])
                 msg_index += 1
                 
-                # Sembunyikan bit di saluran Hijau (G)
+                # Sembunyikan bit di Hijau
                 if msg_index < len(binary_msg):
                     g = (g & ~1) | int(binary_msg[msg_index])
                     msg_index += 1
                 
-                # Sembunyikan bit di saluran Biru (B)
+                # Sembunyikan bit di Biru
                 if msg_index < len(binary_msg):
                     b = (b & ~1) | int(binary_msg[msg_index])
                     msg_index += 1
@@ -59,7 +56,7 @@ def decode_image(image):
 
     binary_msg = ""
     
-    # 1. Ekstrak bit LSB dari setiap channel
+    # Ekstrak bit LSB
     for y in range(height):
         for x in range(width):
             r, g, b = pixels[x, y]
@@ -67,22 +64,19 @@ def decode_image(image):
             binary_msg += str(g & 1)
             binary_msg += str(b & 1)
 
-    # 2. Konversi bit biner ke karakter
+    # ubah bit biner ke karakter
     all_bytes = [binary_msg[i:i+8] for i in range(0, len(binary_msg), 8)]
     decoded_msg = ""
     
     for byte in all_bytes:
-        # Hanya proses byte 8-bit penuh
         if len(byte) == 8:
             decoded_msg += chr(int(byte, 2))
-            # Cek penanda akhir pesan (karakter 'þ' memiliki kode ASCII 254)
             if decoded_msg.endswith("þ"):  
                 break
-                
-    # 3. Hapus karakter penanda akhir ('þ')
+
     return decoded_msg[:-1]
 
-# -------------------- Ambil dan Dekripsi NIK dari DB --------------------
+# ambil nik dr db lalu di dekrip
 def get_and_decrypt_nik(user_id: int):
     """Mengambil NIK terenkripsi, shift, dan key dari DB, lalu mendekripsi NIK."""
     conn = connect_db()
@@ -90,7 +84,6 @@ def get_and_decrypt_nik(user_id: int):
         return None, "Gagal koneksi ke database."
     cur = conn.cursor()
     try:
-        # Ambil record enkripsi teks terbaru milik user ini
         cur.execute("""
             SELECT nik_encrypted, caesar_shift, salsa20_key
             FROM data_pribadi_enkripsi
@@ -103,11 +96,9 @@ def get_and_decrypt_nik(user_id: int):
         if result:
             enc_nik_hex, shift, key_input = result
             
-            # Konversi kembali ke bytes dari hex
             enc_nik = bytes.fromhex(enc_nik_hex)
             key_bytes = key_input.encode('utf-8')
             
-            # Dekripsi NIK
             decrypted_nik = se.super_decrypt(enc_nik, shift, key_bytes)
             return decrypted_nik, None
         else:
@@ -122,7 +113,7 @@ def get_and_decrypt_nik(user_id: int):
             conn.close()
 
 
-# -------------------- Simpan Steganografi Data --------------------
+# simpan ke db
 def save_stegano_record(user_id: int, original_file_name: str, stegan_image_bytes: bytes, hidden_message: str):
     conn = connect_db()
     if not conn:
@@ -142,18 +133,16 @@ def save_stegano_record(user_id: int, original_file_name: str, stegan_image_byte
         if conn:
             conn.close()
 
-# ======== Aplikasi Streamlit ========
+# streamlit
 def stegano():
     st.title("🕵️‍♀️ Aplikasi Steganografi LSB")
     st.write("Masukkan foto ktp atau foto diri anda!")
 
-    # Cek Login
     if 'user_id' not in st.session_state:
         st.error("⚠️ Anda harus login untuk menggunakan fitur ini.")
         return
 
-    # Ambil NIK dari Database
-    # Jalankan hanya sekali saat halaman diakses/direfresh
+    # ambil nik dari db
     if 'nik_decrypted' not in st.session_state:
         with st.spinner('Mengambil dan mendekripsi NIK terbaru dari database...'):
             decrypted_nik, error = get_and_decrypt_nik(st.session_state.user_id)
@@ -174,7 +163,6 @@ def stegano():
     if menu == "🔐 Encode (Sembunyikan Pesan)":
         st.markdown("### 🖼️ Sembunyikan Pesan (Encode)")
 
-        # --- Bagian Pesan Otomatis dari NIK ---
         if nik_for_stegano:
             st.info(f"NIK terbaru yang didekripsi dari DB (**{nik_for_stegano}**) akan otomatis digunakan.")
             hidden_message = nik_for_stegano

@@ -3,7 +3,7 @@ import super_enkrip as se
 from mysql.connector import Error
 from koneksi import connect_db
 
-# -------------------- Simpan Enkripsi Data Pribadi --------------------
+# simpan ke db
 def save_super_encryption_data(user_id: int, enc_nik_hex: str, enc_alamat_hex: str, agama: str, goldar: str, shift: int, key_input: str):
     conn = connect_db()
     if not conn:
@@ -23,11 +23,11 @@ def save_super_encryption_data(user_id: int, enc_nik_hex: str, enc_alamat_hex: s
         if conn:
             conn.close()
 
-# ======= Streamlit App ========
+# streamlit
 def supertext():
     st.title("🔐 Super Enkripsi Data (Caesar + Salsa20)")
 
-    st.write("Form input data pribadi lalu terenkripsi menggunakan Caesar Cipher + Salsa20")
+    st.write("Masukkan informasi pribadi Anda. Data akan terenkripsi menggunakan Caesar Cipher + Salsa20")
 
     with st.form("form_data"):
         nik = st.text_input("NIK")
@@ -47,21 +47,17 @@ def supertext():
         if len(key) != 16:
             st.error("❌ Kunci Salsa20 harus 16 karakter!")
         else:
-            # Encrypt
             enc_nik = se.super_encrypt(nik, shift, key)
             enc_alamat = se.super_encrypt(alamat, shift, key)
 
-            # Convert to hex for display and storage
             enc_nik_hex = enc_nik.hex()
             enc_alamat_hex = enc_alamat.hex()
             key_hex = key.hex() 
 
-            # Decrypt for verification
             dec_nik = se.super_decrypt(enc_nik, shift, key)
             dec_alamat = se.super_decrypt(enc_alamat, shift, key)
 
-            # --- Simpan ke Database ---
-            user_id = st.session_state.user_id # Ambil user_id dari session
+            user_id = st.session_state.user_id 
             saved = save_super_encryption_data(user_id, enc_nik_hex, enc_alamat_hex, agama, goldar, shift, key_input)
 
             if saved:
@@ -79,7 +75,7 @@ def supertext():
                 "Golongan Darah": goldar
             })
 
-            st.subheader("🔐 Data Terenkripsi (Hex)")
+            st.subheader("🔐 Data Terenkripsi")
             st.write({
                 "NIK terenkripsi": enc_nik_hex,
                 "Alamat terenkripsi": enc_alamat_hex,

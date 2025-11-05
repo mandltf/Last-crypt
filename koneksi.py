@@ -1,18 +1,13 @@
 import streamlit as st
-import hashlib
-import base64
 import mysql.connector
 from mysql.connector import Error
-from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
 
-# -------------------- Database Config --------------------
+# konfigurasi database
 DB_HOST = "localhost"
 DB_USER = "root"
 DB_PASS = ""
 DB_NAME = "kriptografi"
 
-# -------------------- Fungsi DB --------------------
 def connect_db():
     try:
         conn = mysql.connector.connect(

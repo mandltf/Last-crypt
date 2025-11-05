@@ -4,7 +4,7 @@ from mysql.connector import Error
 from koneksi import connect_db
 
 # -------------------- Simpan Enkripsi Data Pribadi --------------------
-def save_super_encryption_data(user_id: int, enc_nik_hex: str, enc_alamat_hex: str, agama: str, goldar: str, shift: int, key_hex: str):
+def save_super_encryption_data(user_id: int, enc_nik_hex: str, enc_alamat_hex: str, agama: str, goldar: str, shift: int, key_input: str):
     conn = connect_db()
     if not conn:
         return False
@@ -13,7 +13,7 @@ def save_super_encryption_data(user_id: int, enc_nik_hex: str, enc_alamat_hex: s
         cur.execute("""
             INSERT INTO data_pribadi_enkripsi (user_id, nik_encrypted, alamat_encrypted, agama, golongan_darah, caesar_shift, salsa20_key)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (user_id, enc_nik_hex, enc_alamat_hex, agama, goldar, shift, key_hex))
+        """, (user_id, enc_nik_hex, enc_alamat_hex, agama, goldar, shift, key_input))
         conn.commit()
         return True
     except Error as e:
@@ -62,10 +62,12 @@ def supertext():
 
             # --- Simpan ke Database ---
             user_id = st.session_state.user_id # Ambil user_id dari session
-            saved = save_super_encryption_data(user_id, enc_nik_hex, enc_alamat_hex, agama, goldar, shift, key_hex)
+            saved = save_super_encryption_data(user_id, enc_nik_hex, enc_alamat_hex, agama, goldar, shift, key_input)
 
             if saved:
                 st.success("✅ Data berhasil dienkripsi dan **disimpan ke database**!")
+                if 'nik_decrypted' in st.session_state:
+                    del st.session_state['nik_decrypted']
             else:
                 st.error("❌ Data berhasil dienkripsi, tetapi **gagal disimpan ke database**! Cek pesan error di atas.")
 

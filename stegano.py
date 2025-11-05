@@ -101,11 +101,11 @@ def get_and_decrypt_nik(user_id: int):
         result = cur.fetchone()
         
         if result:
-            enc_nik_hex, shift, key_hex = result
+            enc_nik_hex, shift, key_input = result
             
             # Konversi kembali ke bytes dari hex
             enc_nik = bytes.fromhex(enc_nik_hex)
-            key_bytes = bytes.fromhex(key_hex)
+            key_bytes = key_input.encode('utf-8')
             
             # Dekripsi NIK
             decrypted_nik = se.super_decrypt(enc_nik, shift, key_bytes)

@@ -75,5 +75,5 @@ streamlit run app.py
 ## 🛠️ Languages and Tools
 
 <div>
-    <img src="https://skillicons.dev/icons?i=python,streamlit,vscode,github"/><br/>
+    <img src="https://skillicons.dev/icons?i=python,vscode,github"/><br/>
 </div>

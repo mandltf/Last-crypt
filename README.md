@@ -48,16 +48,14 @@ Seluruh data pengguna disimpan di **MySQL Database** dengan kontrol akses melalu
 
 ## 🧱 Struktur Folder
 Last-crypt/
-│
-├── app.py # File utama (routing login/dashboard)
-├── koneksi.py # Koneksi ke database MySQL
-├── login.py # Halaman login & registrasi
-├── super_enkrip.py # Implementasi Caesar Cipher + Salsa20
-├── superteks.py # Form enkripsi & simpan data pribadi
-├── enkrip_file.py # Enkripsi file dengan XOR
-├── stegano.py # Steganografi gambar (LSB)
-│
-└── README.md # Dokumentasi proyek
+├── app.py              # File utama (routing login/dashboard)
+├── koneksi.py          # Koneksi ke database MySQL
+├── login.py            # Halaman login & registrasi
+├── super_enkrip.py     # Implementasi Caesar Cipher + Salsa20
+├── superteks.py        # Form enkripsi & simpan data pribadi
+├── enkrip_file.py      # Enkripsi file dengan XOR
+├── stegano.py          # Steganografi gambar (LSB)
+└── README.md           # Dokumentasi proyek
 
 ## ⚙️ Instalasi
 Jalankan perintah berikut:

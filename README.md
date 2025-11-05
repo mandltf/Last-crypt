@@ -40,10 +40,6 @@ Seluruh data pengguna disimpan di **MySQL Database** dengan kontrol akses melalu
      - `data_encrypted` — Hasil enkripsi file
      - `data_stegano` — Hasil steganografi (gambar + pesan tersembunyi)
 
-4. **Dekripsi & Validasi**
-   - Sistem dapat mendekripsi kembali data dengan kunci yang sesuai.
-   - Pesan hasil ekstraksi dari gambar divalidasi agar cocok dengan NIK pengguna.
-
 ---
 
 ## 🧱 Struktur Folder

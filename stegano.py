@@ -181,10 +181,10 @@ def stegano():
             st.text_area("Pesan Rahasia Otomatis (NIK):", value=hidden_message, disabled=True)
         elif nik_error:
             st.error(f"⚠️ Gagal mengambil NIK dari DB: {nik_error}")
-            hidden_message = st.text_area("Masukkan Pesan Rahasia", max_chars=1000)
+            st.error('Anda harus memasukkan NIK pada Tab "Input Data Pribadi" untuk menggunakan fitur ini')
         else:
             st.warning("⚠️ NIK belum ditemukan. Masukkan pesan manual.")
-            hidden_message = st.text_area("Masukkan Pesan Rahasia", max_chars=1000)
+            st.error('Anda harus memasukkan NIK pada Tab "Input Data Pribadi" untuk menggunakan fitur ini')
 
         uploaded_file = st.file_uploader("Upload Gambar Asli (PNG direkomendasikan)", type=["png", "jpg", "jpeg"])
 

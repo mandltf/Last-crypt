@@ -18,7 +18,7 @@ elif st.session_state["page"] == "dashboard":
 
     st.write(f"Selamat datang, **{st.session_state.name}** 👋")
 
-    tab1, tab2, tab3 = st.tabs(["🔐 Super Enkripsi Teks", "📂 Enkripsi File", "🖼️ Steganografi"])
+    tab1, tab2, tab3 = st.tabs(["🔐 Input Data Pribadi", "📂 Unggah Berkas", "🖼️ Input Foto Diri/Kartu identitas"])
 
     with tab1:
         superteks.supertext()

@@ -63,8 +63,10 @@ Last-crypt/
 Jalankan perintah berikut:
 ```bash
 pip install streamlit pillow pycryptodome mysql-connector-python
+```
 
 ## 🚀 Cara Menjalankan Aplikasi
 Jalankan perintah berikut:
 ```bash
 streamlit run app.py
+```

@@ -235,12 +235,5 @@ def stegano():
                 if decoded_message:
                     st.success("✅ Pesan ditemukan:")
                     st.code(decoded_message)
-
-                    if nik_for_stegano and decoded_message == nik_for_stegano:
-                        st.success("✅ Pesan cocok dengan NIK anda.")
-                    elif nik_for_stegano:
-                        st.warning("⚠️ Pesan TIDAK cocok dengan NIK anda.")
-                else:
-                    st.warning("Tidak ditemukan pesan tersembunyi.")
             except Exception as e:
                 st.error(f"Error: {e}")

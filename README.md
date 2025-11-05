@@ -47,7 +47,9 @@ Seluruh data pengguna disimpan di **MySQL Database** dengan kontrol akses melalu
 ---
 
 ## 🧱 Struktur Folder
+```text
 Last-crypt/
+│
 ├── app.py              # File utama (routing login/dashboard)
 ├── koneksi.py          # Koneksi ke database MySQL
 ├── login.py            # Halaman login & registrasi
@@ -56,6 +58,7 @@ Last-crypt/
 ├── enkrip_file.py      # Enkripsi file dengan XOR
 ├── stegano.py          # Steganografi gambar (LSB)
 └── README.md           # Dokumentasi proyek
+```
 
 ## ⚙️ Instalasi
 Jalankan perintah berikut:
